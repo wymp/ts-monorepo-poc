@@ -6,7 +6,7 @@
   "scripts": {
     "build": "../../scripts/build-react.sh",
     "check": "../../scripts/check.sh",
-    "clean": "echo 'nothing to clean'",
+    "clean": "../../scripts/clean.sh",
     "dev": "vite",
     "format": "../../scripts/format.sh",
     "lint": "../../scripts/lint.sh",

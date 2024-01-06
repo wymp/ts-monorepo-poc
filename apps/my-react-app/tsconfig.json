@@ -10,7 +10,11 @@
     "isolatedModules": true,
     "noEmit": true,
     "outDir": "./dist",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "noUnusedLocals": false,
+    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo"
   },
   "include": ["src"]
 }

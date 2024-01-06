@@ -117,18 +117,6 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1(vite@5.0.10)
 
-  apps/my-react-app.old:
-    dependencies:
-      '@monorepo/shared-fe':
-        specifier: workspace:^
-        version: link:../../libs/shared-fe
-      '@monorepo/shared-types':
-        specifier: workspace:^
-        version: link:../../libs/shared-types
-      react:
-        specifier: ^18.2.0
-        version: 18.2.0
-
   apps/other-microservice:
     dependencies:
       '@monorepo/shared-be':

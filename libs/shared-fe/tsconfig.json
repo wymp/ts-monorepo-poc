@@ -6,7 +6,8 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "types": ["dom"],
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo"
   },
   "include": ["./src/**/*.tsx?"]
 }
