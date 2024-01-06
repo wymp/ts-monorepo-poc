@@ -3,8 +3,7 @@ import Express from 'express';
 
 const config = {
   port: process.env.PORT || 4000,
-}
-
+};
 
 const app = Express();
 

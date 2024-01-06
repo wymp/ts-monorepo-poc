@@ -9,6 +9,7 @@
     "build": "../../scripts/build.sh",
     "check": "../../scripts/check.sh",
     "clean": "../../scripts/clean.sh",
+    "dev": "../../scripts/dev-node.sh",
     "docker:build": "../../scripts/docker-build.sh",
     "format": "../../scripts/format.sh",
     "lint": "../../scripts/lint.sh",

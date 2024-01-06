@@ -16,3 +16,7 @@ services:
     command: ["/app/dist/main.js"]
     environment:
       PORT: 80
+  my-react-app:
+    image: ghcr.io/my-namespace/my-react-app:${MY_REACT_APP_VERSION:-dev}
+    ports:
+      - "5000:80"

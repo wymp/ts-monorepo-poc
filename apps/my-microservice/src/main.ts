@@ -6,8 +6,8 @@ const config = {
   port: process.env.PORT || 3000,
   other: {
     host: process.env.OTHER_HOST || 'http://localhost:4000',
-  }
-}
+  },
+};
 
 const app = Express();
 

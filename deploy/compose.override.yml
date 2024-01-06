@@ -1,0 +1,18 @@
+services:
+  my-microservice:
+    image: ghcr.io/my-namespace/monorepo:dev
+    command: ["pnpm", "--filter", "my-microservice", "dev"]
+    volumes:
+      - ../:/monorepo
+  other-microservice:
+    image: ghcr.io/my-namespace/monorepo:dev
+    command: ["pnpm", "--filter", "other-microservice", "dev"]
+    volumes:
+      - ../:/monorepo
+  my-react-app:
+    image: ghcr.io/my-namespace/monorepo:dev
+    command: ["pnpm", "--filter", "my-react-app", "dev", "--host", "0.0.0.0"]
+    volumes:
+      - ../:/monorepo
+    ports:
+      - "2000:5173"
