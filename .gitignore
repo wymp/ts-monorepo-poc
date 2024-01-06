@@ -1,0 +1,7 @@
+.sw[op]
+.DS_Store
+**/*.tmp
+**/*.local
+**/.env/local
+node_modules
+dist

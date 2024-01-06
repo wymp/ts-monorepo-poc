@@ -1,0 +1,35 @@
+{
+  "name": "@monorepo/my-microservice",
+  "version": "1.0.0",
+  "description": "",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "../../scripts/build.sh",
+    "check": "../../scripts/check.sh",
+    "clean": "../../scripts/clean.sh",
+    "format": "../../scripts/format.sh",
+    "lint": "../../scripts/lint.sh",
+    "lint:fix": "../../scripts/lint-fix.sh",
+    "prettier": "../../scripts/prettier.sh",
+    "prettier:fix": "../../scripts/prettier-fix.sh",
+    "typecheck": "../../scripts/typecheck.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@monorepo/shared-be": "workspace:^",
+    "@monorepo/shared-types": "workspace:^",
+    "express": "*"
+  },
+  "devDependencies": {
+    "@types/express": "*"
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true,
+    "trailingComma": "all"
+  }
+}

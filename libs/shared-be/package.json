@@ -1,0 +1,38 @@
+{
+  "name": "@monorepo/shared-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "../../scripts/build.sh",
+    "check": "../../scripts/check.sh",
+    "clean": "../../scripts/clean.sh",
+    "format": "../../scripts/format.sh",
+    "lint": "../../scripts/lint.sh",
+    "lint:fix": "../../scripts/lint-fix.sh",
+    "prettier": "../../scripts/prettier.sh",
+    "prettier:fix": "../../scripts/prettier-fix.sh",
+    "typecheck": "../../scripts/typecheck.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "publishConfig": {
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts"
+  },
+  "dependencies": {
+    "@monorepo/shared-types": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/express": "*"
+  },
+  "prettier": {
+    "printWidth": 120,
+    "singleQuote": true,
+    "trailingComma": "all"
+  }
+}
