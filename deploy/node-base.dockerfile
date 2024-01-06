@@ -54,7 +54,9 @@ RUN \
   --mount=type=cache,uid=1000,gid=1000,target=${STORE_DIR} \
   --mount=type=secret,id=npmrc,required=true,uid=1000,gid=1000,target=/root/.npmrc \
   pnpm --filter "./apps/${SERVICE_NAME}" build && \
-  pnpm --store-dir "${STORE_DIR}" --filter "./apps/${SERVICE_NAME}" --prod deploy "/pruned/${SERVICE_NAME}"
+  pnpm --store-dir "${STORE_DIR}" --filter "./apps/${SERVICE_NAME}" --prod deploy "/pruned/${SERVICE_NAME}" && \
+  # There's a [bug in pnpm](https://github.com/pnpm/pnpm/issues/6269) that we need to compensate for here
+  sed -ri 's#"main": "src/(.+)\.ts"#"main": "dist/\1.js"#' "/pruned/${SERVICE_NAME}"/node_modules/@monorepo/*/package.json
 
 
 
