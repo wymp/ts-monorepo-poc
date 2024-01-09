@@ -1,35 +1,31 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
 import { MyThing, myThing } from '@monorepo/shared-types';
 import { MyComponent } from '@monorepo/shared-fe';
+import type { Config } from './types';
 import './App.css';
+import { assembleDeps, DepsContext } from './deps';
+import { Logos } from './containers/Logos';
+import { Counter } from './containers/Counter';
+import { ApiDemo } from './containers/ApiDemo';
 
 const thing: MyThing = myThing;
 
-function App() {
-  const [count, setCount] = useState(0);
+function App(p: { config: Config }) {
+
+  const deps = assembleDeps(p.config);
+
+  if (!deps) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
+    <DepsContext.Provider value={deps}>
+      <Logos />
       <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
+      <Counter />
       <MyComponent thing={thing} />
+      <ApiDemo />
       <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </>
+    </DepsContext.Provider>
   );
 }
 

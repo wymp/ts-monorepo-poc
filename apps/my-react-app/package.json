@@ -8,7 +8,7 @@
     "check": "../../scripts/check.sh",
     "clean": "../../scripts/clean.sh",
     "dev": "../../scripts/dev-react.sh",
-    "docker:build": "../../scripts/docker-build.sh",
+    "docker:build": "REACT=1 ../../scripts/docker-build.sh",
     "format": "../../scripts/format.sh",
     "lint": "../../scripts/lint.sh",
     "lint:fix": "../../scripts/lint-fix.sh",
@@ -20,7 +20,8 @@
     "@monorepo/shared-fe": "workspace:^",
     "@monorepo/shared-types": "workspace:^",
     "react": "*",
-    "react-dom": "*"
+    "react-dom": "*",
+    "react-select": "^5.8.0"
   },
   "devDependencies": {
     "@types/react": "*",

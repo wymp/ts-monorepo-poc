@@ -9,10 +9,10 @@ export const MyComponent = (p: { thing?: MyThing }) => {
   return (
     <div>
       <p>
-        My Component -{}
-        <a href="#" onClick={() => setShowThing(!showThing)}>
+        My Component - {' '}
+        <button onClick={() => setShowThing(!showThing)}>
           {showThing ? `Hide Thing` : `Show Thing`}
-        </a>
+        </button>
       </p>
       {showThing && <p>Thing: {thing}</p>}
     </div>

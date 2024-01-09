@@ -12,11 +12,15 @@ const config = {
 const app = Express();
 
 app.use(loggingMiddleware(`my-microservice`));
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+})
 
 app.get('/', (req, res) => {
   const thing: MyThing = myThing;
   const url = `${req.protocol}://${req.get('host')}${req.originalUrl}}`;
-  res.json({ status: 'ok', url, thing });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), url, thing });
 });
 
 app.get('/proxy', async (req, res, next) => {
@@ -25,7 +29,7 @@ app.get('/proxy', async (req, res, next) => {
       throw new Error('Error from my-microservice');
     }
     const response = await (await fetch(config.other.host)).json();
-    res.json({ status: 'ok', path: req.path, response });
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), path: req.path, response });
   } catch (error) {
     next(error);
   }
