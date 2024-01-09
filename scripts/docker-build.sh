@@ -19,15 +19,15 @@ ROOT="$(dirname "$0")/.."
 # Create a files array that will contain the dockerfiles (in order) that we're going to concat together to make our
 # final dockerfile. If this is a react app, add the react extension. Finally, if the service has a service.dockerfile,
 # we'll add that
-FILES=("$ROOT"/deploy/base.dockerfile)
+FILES=("$ROOT"/deploy/dockerfile.base)
 if [ -n "$REACT" ]; then
-  FILES+=("$ROOT"/deploy/react-ext.dockerfile)
+  FILES+=("$ROOT"/deploy/dockerfile.react-ext)
   if [ -z "$DOCKER_TARGET" ]; then
     DOCKER_TARGET=react-app
   fi
 fi
-if [ -f "$ROOT"/apps/"$SERVICE_NAME"/deploy/service.dockerfile ]; then
-  FILES+=("$ROOT"/apps/"$SERVICE_NAME"/deploy/service.dockerfile)
+if [ -f "$ROOT"/apps/"$SERVICE_NAME"/deploy/dockerfile.service ]; then
+  FILES+=("$ROOT"/apps/"$SERVICE_NAME"/deploy/dockerfile.service)
 fi
 
 # It's good practice to lock down node and package manager versions, but we're not going to worry about the best way to

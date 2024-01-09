@@ -1,9 +1,13 @@
+# This is the dev docker compose profile. It replaces the production image of each service with the dev image and mounts
+# your local monorepo into each container, enabling hot reloading for all services.
 services:
   my-microservice:
     image: ghcr.io/my-namespace/monorepo:dev
     command: ["pnpm", "--filter", "my-microservice", "dev"]
     volumes:
       - ../:/monorepo
+    ports:
+      - "3000:80"
   other-microservice:
     image: ghcr.io/my-namespace/monorepo:dev
     command: ["pnpm", "--filter", "other-microservice", "dev"]
@@ -15,4 +19,4 @@ services:
     volumes:
       - ../:/monorepo
     ports:
-      - "2000:5173"
+      - "5000:5173"

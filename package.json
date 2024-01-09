@@ -9,8 +9,8 @@
     "build:apps": "pnpm --filter './apps/*' build",
     "check": "pnpm -r check",
     "clean": "pnpm -r clean",
-    "docker:build": "pnpm -r --sequential docker:build",
-    "docker:compose": "docker compose -f ./deploy/compose.yaml",
+    "docker:build": "DOCKER_TARGET=dev SERVICE_NAME=monorepo ./scripts/docker-build.sh && pnpm -r --sequential docker:build",
+    "docker:compose": "./scripts/docker-compose.sh",
     "format": "pnpm -r format",
     "typecheck": "pnpm -r typecheck"
   },

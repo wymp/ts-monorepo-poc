@@ -3,7 +3,7 @@
 # to set and retrieve these values from the `package.json::engines` field.
 
 ARG NODE_VERSION=lts
-FROM node:${NODE_VERSION}-alpine3.17 as libs-builder
+FROM node:${NODE_VERSION}-alpine3.17 as dev
 
 # Set up the PM_VERSION and STORE_DIR build args. You probably won't have to change the STORE_DIR, as this is an
 # internal variable used to manage the pnpm cache.
@@ -45,7 +45,7 @@ RUN pnpm build:libs
 # Build a service
 ##
 
-FROM libs-builder as service-builder
+FROM dev as service-builder
 ARG STORE_DIR=/monorepo/.pnpm-store SERVICE_NAME="NEED SERVICE_NAME BUILD ARG"
 
 # Build the designated service and "deploy" it. This basically just copies the built service and installs only its
@@ -76,7 +76,6 @@ USER node
 # Create and use the `/app` dir and copy the pruned service into it
 WORKDIR /app
 COPY --from=service-builder --chown=node:node /pruned/$SERVICE_NAME /app
-COPY --from=service-builder --chown=node:node /monorepo/apps/$SERVICE_NAME/package.json /app
 
 # From this point, it is intended that services provide an additional dockerfile that will be concatenated to this one
 # and used to build the final image. Alternatively, you can build an image (e.g., for testing or exploration) using this

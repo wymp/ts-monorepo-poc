@@ -1,0 +1,10 @@
+# This compose profile may be used to test containers built for production. Note that this DOES NOT provide your
+# production env vars. It is only meant for manual testing of the production build.
+services:
+  my-microservice:
+    ports:
+      - "3000:80"
+  my-react-app:
+    ports:
+      - "5000:80"
+  

@@ -1,0 +1,10 @@
+# If desired, you may create a `./deploy/compose.local.yml` file with any overrides you wish to apply to the stack.
+# You may do this to provide different environment variables, to expose additional ports, to change images, etc.
+
+services:
+  my-microservice:
+    image: my-microservice-test:latest
+    ports:
+      - 8080:8080
+    environment:
+      - MY_ENV_VAR=foo

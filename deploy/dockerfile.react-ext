@@ -1,0 +1,9 @@
+# This file is intended to extend `dockerfile.base`
+
+FROM nginx:1-alpine-slim as react-app
+ARG SERVICE_NAME="NEED SERVICE_NAME BUILD ARG"
+
+WORKDIR /usr/share/nginx/html
+
+COPY --from=service-builder /pruned/${SERVICE_NAME}/dist ./
+COPY ./deploy/nginx.conf /etc/nginx/conf.d/default.conf

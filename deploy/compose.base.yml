@@ -1,3 +1,6 @@
+# This is a base docker compose profile. Other profiles will extend this profile to create various deployments of the
+# stack. The best way to use this infrastructure is through the `pnpm docker:compose` command. See
+# `pnpm docker:compose --help` more details.
 name: monorepo-poc
 
 version: "3"
@@ -6,8 +9,6 @@ services:
   my-microservice:
     image: ghcr.io/my-namespace/my-microservice:${MY_MICROSERVICE_VERSION:-dev}
     command: ["/app/dist/main.js"]
-    ports:
-      - "3000:80"
     environment:
       PORT: 80
       OTHER_HOST: http://other-microservice
@@ -18,5 +19,3 @@ services:
       PORT: 80
   my-react-app:
     image: ghcr.io/my-namespace/my-react-app:${MY_REACT_APP_VERSION:-dev}
-    ports:
-      - "5000:80"
