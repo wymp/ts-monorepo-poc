@@ -45,7 +45,6 @@ module.exports = [
     // For all front-end code
     {
         "files": ["apps/my-react-app/{src,tests}/**", "libs/shared-fe/{src,tests}/**"],
-        "extends": [ 'plugin:react-hooks/recommended' ],
         "env": { "browser": true, "es2020": true },
         "plugins": {
             "react-refresh": reactRefresh,
@@ -56,6 +55,22 @@ module.exports = [
                 { "allowConstantExport": true },
             ],
         },
+    },
+
+    // For testing
+    {
+        "files": ["**/tests/**"],
+        "rules": {
+            "@typescript-eslint/no-explicit-any": "off",
+        }
+    },
+
+    // A few random adjustments for everything
+    {
+        "rules": {
+            // Typescript does this already
+            "@typescript-eslint/no-unused-vars": "off",
+        }
     },
 
     // All code will be prettified, so make sure this is at the end

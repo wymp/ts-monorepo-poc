@@ -1,15 +1,15 @@
-import { MyThing, myThing } from "@monorepo/shared-types";
-import type { Request, Response, NextFunction } from "express";
-import type { Deps } from "../types";
+import { MyThing, myThing } from '@monorepo/shared-types';
+import type { Request, Response, NextFunction } from 'express';
+import type { Deps } from '../types';
 
 export const Handlers = {
-  "GET /": async () => (req: Request, res: Response) => {
+  'GET /': async () => (req: Request, res: Response) => {
     const thing: MyThing = myThing;
     const url = `${req.protocol}://${req.get('host')}${req.originalUrl}}`;
     res.json({ status: 'ok', timestamp: new Date().toISOString(), url, thing });
   },
 
-  "GET /proxy": async (deps: Deps) => async (req: Request, res: Response, next: NextFunction) => {
+  'GET /proxy': async (deps: Deps) => async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (req.query.error) {
         throw new Error('Error from my-microservice');
@@ -24,5 +24,5 @@ export const Handlers = {
   errors: async () => async (err: Error, req: Request, res: Response, next: NextFunction) => {
     console.error(`Error in my-microservice:`, err);
     res.status(500).json({ status: 'error', error: err.message });
-  }
-}
+  },
+};

@@ -238,15 +238,15 @@ Some key points:
 * GOTCHA: There's a dynamic section in `dockerfile.base` to mount all the libs and apps when installing deps. This
   allows us to not have to risk having an out-of-date dockerfile when we add new libs and apps, but it also makes the
   dockerfile unusable in raw form. Trade-offs.
-* The front-end dockerfile (`./deploy/dockerfile.react-ext`) has not been battle tested and is considered a starting
-  point.
+* The front-end container ( created by `./deploy/dockerfile.react-ext`) has not been battle tested and is considered a
+  starting point.
 * At this time, there are no service-specific extensions, but the implemented dockerfile system allows you to provide
   a file at `apps/*/deploy/dockerfile.service` if you wish to make additional changes to the final built service. If
   you need to change the build target as a result, you can change the given package's `docker:build` npm script to
   contain the `DOCKER_TARGET` env var before calling the script, e.g.,
   `"docker:build": "DOCKER_TARGET=my-targ ../../scripts/docker-build.sh"`
-* The dev docker image is simply the monorepo. And since the `/monorepo` directory is actually replaced with your live
-  monorepo, the image really just serves as a fixed runtime environment.
+* The dev docker image is simply the monorepo. And since the `/monorepo` directory in the container is actually replaced
+  with your live monorepo, the image really just serves as a fixed runtime environment.
 * You can build all containers using `pnpm docker:build`
 * You can bring the system up using `pnpm docker:compose up -d` (dev). This brings the system up in dev mode with your
   local monorepo linked in. If you want to run the actual built containers statically, try `pnpm docker:compose prod up -d`.
@@ -268,6 +268,55 @@ With that caveat, here's what to know about my eslint setup:
   eslint, but it's supposedly been feature complete for a while now so I figured I'd go for it.
 * I'm not by any means an expert in eslint config, so I may have messed this up. Take what I've done as inspiration, but
   be ready to forge your own path here.
+
+
+### Project Testing
+
+_(As opposed to E2E testing, which is further down)_
+
+This is another area where there's probably a lot of room for improvement over what I've done. While I'm certainly an
+expert at _writing_ tests, I'm closer to a beginner than an expert in terms of all the setup and configuration for
+testing, especially for a monorepo.
+
+All that said, here are the key points in my monorepo testing setup:
+
+* There was no way around having a `jest.config.js` file in every sub-package :sob:.
+* Because it's likely that as the codebase grows I'll need more complex testing config, I created a `.jest` directory
+  into which I put my jest config files. The main file, `.jest/global.js`, simply defines a few global options and then
+  tells jest to go look in `apps` and `libs` for actual projects. The other, `.jest/common.js`, is extended in each of
+  the individual project configs.
+* With reference to the above, note that not all options set in `global.js` actually trickle down to the projects.
+* Like everything else, we're using a script under `./scripts` as our entrypoint, and we're setting our top-level `test`
+  command to `pnpm -r test`. You can easily filter by just adding a filter (e.g., `pnpm t --filter my-microservice`),
+  and you can also pass opts directly to jest, although unfortunately you have to use the old `--` argument separator
+  for this. For example, `pnpm t --filter my-microservice -- -t GET`.
+* I have mixed opinions on front-end testing. I've found front-end tests are often brittle and of little value. I'll
+  typically test functions and other logic, but I don't find it very useful to write component tests. Instead, I focus
+  my energies on writing good E2E tests, and I prioritize my E2E tests carefully based on system importance and logical
+  complexity (things that are hard to reason about are higher priority, while simpler things are lower).
+
+
+### E2E Testing
+
+_TODO: Figure this out. I'm new to automated e2e testing so need to experiment before putting something out there.
+Cypress is popular, but when I did some research for the last company I was at I ended up leaning toward Playwright.
+Whatever you choose, just create the project in the top-level `e2e-tests` directory and go from there.
+
+
+### Environment Variables
+
+I haven't done a lot with environment variables in this monorepo. To me, `.env` files are a bit of a mess because so
+many different tools have started to use them (not only your app, but also `docker compose` and other such tools).
+Additionally, because people tend to use `.env` files to set vars for different environments, you often end up with a
+passel of `.env` files in the top level of your project, such as `.env.prod`, `.env.staging`, `.env.qa`, etc.
+
+My current favorite solution to this is [this](https://github.com/wymp/config-simple#usage-with-environment-specific-dot-env-files),
+which uses familiar languge (`.env`), but makes it a directory instead of a file, which both neats things up and also
+keeps other tooling from using the values unexpectedly.
+
+As a final note on env vars, they're still a really great way to modify functionality in your scripts. For example, you
+may want to change the way your `check` script works if it's in a CI environment. You can do this by simple implementing
+the conditional functionality based on the `CI` env var.
 
 
 ### Boilerplate

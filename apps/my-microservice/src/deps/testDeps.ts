@@ -1,7 +1,7 @@
-import { FakeFetch } from "@monorepo/testing";
-import * as Express from "express";
-import { Deps } from "../types";
-import { getConfig } from "./config";
+import { FakeFetch } from '@monorepo/testing';
+import * as Express from 'express';
+import { Deps } from '../types';
+import { getConfig } from './config';
 
 /**
  * Our testing dependencies are all our production deps, but with a fake fetch
@@ -16,4 +16,4 @@ export const assembleDeps = async (): Promise<FakeDeps> => {
     config,
     fetch: new FakeFetch(),
   });
-}
+};

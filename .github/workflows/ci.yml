@@ -123,7 +123,7 @@ jobs:
   ## Run linting/typechecks/tests
   ##
 
-  test:
+  check:
     needs: [get-deploy-env]
     runs-on: ubuntu-latest
     steps:
@@ -140,37 +140,22 @@ jobs:
             ./apps/*/node_modules/.cache/eslint-cache
             ./libs/*/node_modules/.cache/eslint-cache
 
-      # - name: Jest Cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     key: jest-cache-${{ env.BRANCH }}
-      #     restore-keys: |
-      #       jest-cache-
-      #     path: |
-      #       /tmp/jest_*
+      - name: Jest Cache
+        uses: actions/cache@v3
+        with:
+          key: jest-cache-${{ env.BRANCH }}
+          restore-keys: |
+            jest-cache-
+          path: |
+            /tmp/jest_*
 
-      - name: Lint and Typecheck
+      - name: Lint, Typecheck and Test
         run: |
           pnpm \
             --parallel \
             --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
             --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
-            typecheck
-
-          pnpm \
-            --parallel \
-            --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
-            --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
-            prettier
-
-          pnpm \
-            --parallel \
-            --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
-            --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
-            lint
-
-      # - name: Run Tests
-      #   run: pnpm test --changedSince=${{ needs.get-deploy-env.outputs.affected-shas-base }}
+            check
 
   ##
   ## Pre-Seed Docker Cache
@@ -184,7 +169,7 @@ jobs:
 
   build-and-deploy:
     name: Build and Deploy ${{ matrix.service }}
-    needs: [get-deploy-env, test]
+    needs: [get-deploy-env, check]
     if: "!cancelled() && !failure() && needs.get-deploy-env.outputs.deployable == 'true'"
     runs-on: ubuntu-latest
     strategy:

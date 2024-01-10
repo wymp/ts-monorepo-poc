@@ -38,9 +38,9 @@ export const ApiDemo = () => {
   return (
     <div className="api-demo">
       <h3>API Demo</h3>
-      <p>
+      <div style={{ marginBottom: '20px' }}>
         <Select value={selectedOpt} options={opts} onChange={changeDataSrc} />
-      </p>
+      </div>
       <div>
         <button onClick={refreshData}>{data ? '(Re)' : ''}Fetch Data</button>
         <pre style={{ textAlign: 'left' }}>{data ? JSON.stringify(data, null, 2) : '(Awaiting fetch)'}</pre>

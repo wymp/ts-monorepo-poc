@@ -14,5 +14,4 @@ export const assembleDeps = async (): Promise<Deps> => {
     config,
     fetch: { fetch },
   });
-}
-
+};

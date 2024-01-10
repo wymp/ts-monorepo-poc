@@ -1,26 +1,26 @@
-import { loggingMiddleware } from '@monorepo/shared-be';
-import Express from 'express';
+import { assembleDeps } from './deps/prodDeps';
+import { initApp } from './init';
 
-const config = {
-  port: process.env.PORT || 4000,
+// Set the app up to gracefully handle shutdowns
+
+let shutdown: () => Promise<void>;
+
+const close = async (e: unknown) => {
+  if (typeof e === 'string') {
+    console.log(`Signal '${e}' received. Shutting down...`);
+  } else {
+    console.error(e);
+  }
+  await shutdown();
 };
 
-const app = Express();
+process.on('SIGTERM', close);
+process.on('SIGINT', close);
+process.on('unhandledRejection', close);
 
-app.use(loggingMiddleware(`other-microservice`));
+// Now assemble our production dependencies and initialize the app with them
 
-app.get('/', (req, res) => {
-  const url = `${req.protocol}://${req.get('host')}${req.originalUrl}}`;
-  res.json({ status: 'ok', url });
-});
-
-app.use(((err, req, res) => {
-  if (!err) {
-    res.status(404).json({ status: 'error', error: 'Not found' });
-  } else {
-    res.status(500).json({ status: 'error', error: err.message });
-  }
-}) as Express.ErrorRequestHandler);
-
-app.listen(config.port);
-console.log(`other-microservice listening on port ${config.port}`);
+(async () => {
+  const deps = await assembleDeps();
+  shutdown = await initApp(deps);
+})();

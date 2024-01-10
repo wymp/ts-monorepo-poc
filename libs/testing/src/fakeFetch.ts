@@ -1,11 +1,8 @@
-import type { Fetch } from "@monorepo/shared-types";
+import type { Fetch } from '@monorepo/shared-types';
 
 export type FakeFetchResponse = { status?: number; jsonBody?: string };
 
-export type FakeFetchResponseQueue = Record<
-  string,
-  Array<FakeFetchResponse>
->
+export type FakeFetchResponseQueue = Record<string, Array<FakeFetchResponse>>;
 
 export class FakeFetch implements Fetch {
   public defaultResponse: FakeFetchResponse = {
@@ -19,6 +16,6 @@ export class FakeFetch implements Fetch {
       status: response.status || 200,
       json: async () => JSON.parse(response.jsonBody || ''),
       text: async () => response.jsonBody || '',
-    }
+    };
   }
 }

@@ -16,12 +16,12 @@ describe(`my-microservice e2e`, () => {
   // After all tests, shut the server down again
   afterAll(async () => {
     await shutdown();
-  })
+  });
 
   // Before each test, clear out the fetch queue
   beforeEach(() => {
     deps.fetch.queue = {};
-  })
+  });
 
   test('GET /', async () => {
     const res = await fetch(`http://localhost:${port}`);
@@ -34,14 +34,14 @@ describe(`my-microservice e2e`, () => {
   });
 
   test('GET /proxy', async () => {
-    deps.fetch.queue['http://localhost:4000'] = [{ status: 200, jsonBody: JSON.stringify({ test: "ok" }) }];
+    deps.fetch.queue['http://localhost:4000'] = [{ status: 200, jsonBody: JSON.stringify({ test: 'ok' }) }];
     const res = await fetch(`http://localhost:${port}/proxy`);
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({
       status: 'ok',
       timestamp: expect.any(String),
       path: expect.any(String),
-      response: { test: "ok" },
+      response: { test: 'ok' },
     });
   });
 

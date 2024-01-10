@@ -5,14 +5,14 @@ import { initApp } from './init';
 
 let shutdown: () => Promise<void>;
 
-const close = async (e: any) => {
+const close = async (e: unknown) => {
   if (typeof e === 'string') {
     console.log(`Signal '${e}' received. Shutting down...`);
   } else {
     console.error(e);
   }
   await shutdown();
-}
+};
 
 process.on('SIGTERM', close);
 process.on('SIGINT', close);

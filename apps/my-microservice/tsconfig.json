@@ -6,5 +6,5 @@
     "types": ["node"],
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo"
   },
-  "include": ["./src/**/*.ts", "../../libs/testing/src/fakeFetch.ts"]
+  "include": ["./src/**/*.ts"]
 }

@@ -15,6 +15,7 @@
     "lint:fix": "../../scripts/lint-fix.sh",
     "prettier": "../../scripts/prettier.sh",
     "prettier:fix": "../../scripts/prettier-fix.sh",
+    "test": "../../scripts/test.sh",
     "typecheck": "../../scripts/typecheck.sh"
   },
   "keywords": [],

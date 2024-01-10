@@ -1,6 +1,7 @@
 import { MyThing, myThing } from '@monorepo/shared-types';
 import { MyComponent } from '@monorepo/shared-fe';
-import type { Config } from './types';
+import { useEffect, useState } from 'react';
+import type { Config, Deps } from './types';
 import './App.css';
 import { assembleDeps, DepsContext } from './deps';
 import { Logos } from './containers/Logos';
@@ -10,7 +11,11 @@ import { ApiDemo } from './containers/ApiDemo';
 const thing: MyThing = myThing;
 
 function App(p: { config: Config }) {
-  const deps = assembleDeps(p.config);
+  // We might have to wait for our dependencies to load - here's how we'd do that
+  const [deps, setDeps] = useState<Deps | null>(null);
+  useEffect(() => {
+    assembleDeps(p.config).then(setDeps);
+  }, [p.config]);
 
   if (!deps) {
     return <div>Loading...</div>;
