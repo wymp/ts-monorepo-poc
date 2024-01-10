@@ -10,7 +10,6 @@ import { ApiDemo } from './containers/ApiDemo';
 const thing: MyThing = myThing;
 
 function App(p: { config: Config }) {
-
   const deps = assembleDeps(p.config);
 
   if (!deps) {

@@ -15,7 +15,7 @@ app.use(loggingMiddleware(`my-microservice`));
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   next();
-})
+});
 
 app.get('/', (req, res) => {
   const thing: MyThing = myThing;
@@ -35,7 +35,7 @@ app.get('/proxy', async (req, res, next) => {
   }
 });
 
-app.use(((err, req, res, next) => {
+app.use(((err, req, res) => {
   if (!err) {
     res.status(404).json({ status: 'error', error: 'Not found' });
   } else {

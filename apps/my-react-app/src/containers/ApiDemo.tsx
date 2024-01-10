@@ -14,11 +14,14 @@ export const ApiDemo = () => {
   const [data, setData] = React.useState<unknown | null>(null);
   const [dataSrc, setDataSrc] = React.useState<DATA_OPTS>(DATA_OPTS.MY_MICROSERVICE);
 
-  const changeDataSrc = React.useCallback((newValue: Opts | null) => {
-    if (newValue && newValue.value !== dataSrc) {
-      setDataSrc(newValue.value);
-    }
-  }, [dataSrc, setDataSrc]);
+  const changeDataSrc = React.useCallback(
+    (newValue: Opts | null) => {
+      if (newValue && newValue.value !== dataSrc) {
+        setDataSrc(newValue.value);
+      }
+    },
+    [dataSrc, setDataSrc],
+  );
 
   const refreshData = React.useCallback(async () => {
     try {
@@ -33,13 +36,15 @@ export const ApiDemo = () => {
   const selectedOpt = opts.find((o) => o.value === dataSrc) || null;
 
   return (
-    <div className='api-demo'>
+    <div className="api-demo">
       <h3>API Demo</h3>
-      <p><Select value={selectedOpt} options={opts} onChange={changeDataSrc} /></p>
+      <p>
+        <Select value={selectedOpt} options={opts} onChange={changeDataSrc} />
+      </p>
       <div>
         <button onClick={refreshData}>{data ? '(Re)' : ''}Fetch Data</button>
         <pre style={{ textAlign: 'left' }}>{data ? JSON.stringify(data, null, 2) : '(Awaiting fetch)'}</pre>
       </div>
     </div>
-  )
-}
+  );
+};

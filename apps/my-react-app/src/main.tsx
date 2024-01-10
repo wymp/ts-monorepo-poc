@@ -9,8 +9,8 @@ import './index.css';
 const config: Config = {
   api: {
     baseUrl: import.meta.env.VITE_APP_API_URL || 'http://localhost:3000',
-  }
-}
+  },
+};
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

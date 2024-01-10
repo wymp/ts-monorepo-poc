@@ -1,0 +1,306 @@
+name: CI
+
+on:
+  # We use a `vX.Y` branch naming convention for our "main" branches, so we'll target pushes against those (including
+  # merged PRs)
+  push:
+    branches:
+      - v*
+  # Additionally, we'll target PR updates so that CI runs against open PRs
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  # Finally, we'll allow the workflow to be triggered manually
+  workflow_dispatch:
+
+# Only one run at a time per ref
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  ##
+  ## PREPARE
+  ##
+
+  get-deploy-env:
+    runs-on: ubuntu-latest
+    # Necessary for nrwl/nx-set-shas
+    permissions:
+      contents: 'read'
+      actions: 'read'
+    outputs:
+      node-version: ${{ steps.initial-vars.outputs.NODE_VERSION }}
+      pnpm-version: ${{ steps.initial-vars.outputs.PNPM_VERSION }}
+      affected-shas-base: ${{ steps.get-affected-sha-spread.outputs.base }}
+      affected-shas-head: ${{ steps.get-affected-sha-spread.outputs.head }}
+      pnpmFilter: ${{ steps.get-pnpm-params.outputs.pnpmFilter }}
+      pnpmIgnorePattern: ${{ steps.get-pnpm-params.outputs.pnpmIgnorePattern }}
+      allAppsJson: ${{ steps.get-all-pkgs.outputs.allAppsJson }}
+      allLibsJson: ${{ steps.get-all-pkgs.outputs.allLibsJson }}
+      affectedAppsJson: ${{ steps.get-affected-pkgs.outputs.affectedAppsJson }}
+      affectedLibsJson: ${{ steps.get-affected-pkgs.outputs.affectedLibsJson }}
+      deployable: ${{ steps.is-deployable.outputs.deployable }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Output some initial variables that we'll need later
+      - name: Initial Vars
+        id: initial-vars
+        run: |
+          # Replace this with 'v1.x' or another branch to simulate a CI run on that branch
+          REFNAME=$GITHUB_REF_NAME
+          # REFNAME=v1.x
+          echo "REFNAME=$REFNAME"
+          echo "REFNAME=$REFNAME" >> $GITHUB_ENV
+
+          BASEBRANCH="$(echo "$REFNAME" | grep -q '^develop|release-|main-' && echo $REFNAME || echo develop)"
+          echo "BASEBRANCH=$BASEBRANCH"
+          echo "BASEBRANCH=$BASEBRANCH" >> $GITHUB_ENV
+
+          NODE_VERSION="$(./scripts/.internal/getEngineVersion.sh node)"
+          echo "NODE_VERSION=$NODE_VERSION"
+          echo "NODE_VERSION=$NODE_VERSION" >> $GITHUB_OUTPUTS
+
+          PNPM_VERSION="$(./scripts/.internal/getEngineVersion.sh pnpm)"
+          echo "PNPM_VERSION=$PNPM_VERSION"
+          echo "PNPM_VERSION=$PNPM_VERSION" >> $GITHUB_OUTPUTS
+
+      # Output some info for debugging purposes
+      - name: Output Versions for Debugging
+        run: |
+          echo effective branch: $REFNAME
+          echo "git: $(git --version)"
+          echo "jq: $(jq --version)"
+          echo "docker: $(docker --version 2>/dev/null)"
+
+      # Install pnpm (we don't need the whole node setup and all the deps, so we're just doing a simple pnpm install here)
+      - name: Install pnpm
+        run: npm i -g pnpm@${{ steps.initial-vars.outputs.PNPM_VERSION }}
+
+      # This is what allows us not to have to run our linting and testing against all of our code
+      - name: Determine the spread of affected commits
+        id: get-affected-sha-spread
+        uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: ${{ env.BASEBRANCH }}
+
+      # Use our current info to get a pnpm filter and ignore pattern to use in future commands, as well as a list of
+      # affected apps and libs
+      - name: Get pnpm params
+        id: get-pnpm-params
+        run: ./.github/workflows/get-pnpm-params.sh
+      - name: Get list of all packages from the repo
+        id: get-all-pkgs
+        run: ./.github/workflows/get-all-pkgs.sh
+      - name: Get lists of affected libs and apps
+        id: get-affected-pkgs
+        run: ./.github/workflows/get-affected-pkgs.sh
+        env:
+          hasTopLevelChanges: ${{ steps.get-pnpm-params.outputs.hasTopLevelChanges }}
+          pnpmFilter: ${{ steps.get-pnpm-params.outputs.pnpmFilter }}
+          pnpmIgnorePattern: ${{ steps.get-pnpm-params.outputs.pnpmIgnorePattern }}
+          allAppsJson: ${{ steps.get-all-pkgs.outputs.allAppsJson }}
+          allLibsJson: ${{ steps.get-all-pkgs.outputs.allLibsJson }}
+
+      # Finally, determine whether the current branch is deployable
+      - name: Determine whether the current branch is deployable
+        id: is-deployable
+        run: |
+          deployable="$(echo "$REFNAME" | grep -Eq '^v[0-9]+\..+$' && [ '${{ steps.get-affected-pkgs.outputs.affectedAppsJson }}' != '[]' ] && echo "true" || echo "false")"
+          echo "deployable=$deployable"
+          echo "deployable=$deployable" >> $GITHUB_OUTPUT
+
+  ##
+  ## Run linting/typechecks/tests
+  ##
+
+  test:
+    needs: [get-deploy-env]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up node and pnpm
+        uses: ./.github/actions/setup-env.yml
+
+      - name: ESLint Cache
+        uses: actions/cache@v3
+        with:
+          key: eslint-cache-${{ hashFiles('libs/**/*', 'apps/**/*', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            eslint-cache-
+          path: |
+            ./apps/*/.eslintcache
+            ./packages/*/.eslintcache
+
+      - name: Jest Cache
+        uses: actions/cache@v3
+        with:
+          key: jest-cache-${{ env.BRANCH }}
+          restore-keys: |
+            jest-cache-
+          path: |
+            /tmp/jest_*
+
+      - name: Typecheck and build
+        run: pnpm build:libs
+
+      - name: Prepare app envs
+        run: |
+          for d in ./apps/*; do
+            # TODO:TEMPORARY: Remove this once we've finished https://neatcapital.atlassian.net/browse/LOANS-8353
+            if ! [ -d "$d/.env" ] && [ -f "$d/.env.sample" ]; then
+              cp "$d/.env.sample" "$d/.env"
+            fi
+          done
+
+      - name: Lint
+        run: |
+          pnpm \
+            --parallel \
+            --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
+            --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
+            lint
+
+          # Don't need to typecheck because our build step above does that for us
+          # pnpm \
+          #   --parallel \
+          #   --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
+          #   --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
+          #   typecheck
+
+      - name: Run Tests
+        run: pnpm test:raw --changedSince=${{ needs.get-deploy-env.outputs.affected-shas-base }}
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/testdb
+          CLOUDAMQP_URL: amqp://localhost:${{ job.services.rabbitmq.ports[5672] }}
+
+  ##
+  ## Prime our docker layer cache
+  ##
+
+  # TODO: We need to figure out how to do docker layer caching on our own (without build-push-action) so that our
+  # internal `deploy-to-heroku` action works properly.
+
+  # prime-docker-cache:
+  #   name: Prime Docker Cache
+  #   # needs: [test, get-deploy-env]
+  #   # needs: [get-deploy-env]
+  #   # if: "!cancelled() && !failure() && needs.get-deploy-env.outputs.deployable == 'true'"
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: PNPM Cache for Docker
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: .pnpm-store
+  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('./pnpm-lock.yaml') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pnpm-store-
+
+  #     - uses: docker/setup-buildx-action@v3
+
+  #     - name: Inject pnpm cache into Docker
+  #       uses: reproducible-containers/buildkit-cache-dance@v2.1.2
+  #       with:
+  #         cache-source: .pnpm-store
+  #         cache-target: /monorepo/.pnpm-store
+
+  #     # WARNING: File mutations prior to this step will be ignored in the docker build. See documentation at
+  #     # https://github.com/docker/build-push-action
+  #     - uses: docker/build-push-action@v5
+  #       with:
+  #         context: .
+  #         cache-from: type=gha
+  #         cache-to: type=gha,mode=max
+  #         file: ./deploy/Dockerfile
+  #         target: libs-builder
+  #         build-args: |
+  #           NODE_VERSION=18
+  #           PM_VERSION=^8
+  #         # build-args: |
+  #         #   NODE_VERSION=${{ needs.get-deploy-env.outputs.node-version }}
+  #         #   PM_VERSION=${{ needs.get-deploy-env.outputs.pm-version }}
+  #         secrets: |
+  #           npmrc=//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+  ##
+  ## Build and deploy services
+  ##
+
+  build-and-deploy:
+    name: Build and Deploy ${{ matrix.service && format('{0}-{1}', matrix.service, 'service') || '' }}
+    needs: [get-deploy-env, test] #, prime-docker-cache]
+    if: "!cancelled() && !failure() && needs.get-deploy-env.outputs.deployable == 'true'"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.get-deploy-env.outputs.affectedAppsJson) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # - name: PNPM Cache for Docker
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: .pnpm-store
+      #     key: ${{ runner.os }}-pnpm-store-${{ hashFiles('./pnpm-lock.yaml') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-pnpm-store-
+
+      # - name: Inject pnpm cache into Docker
+      #   uses: reproducible-containers/buildkit-cache-dance@v2.1.2
+      #   with:
+      #     cache-source: .pnpm-store
+      #     cache-target: /monorepo/.pnpm-store
+
+      - name: Fix app name
+        id: fix-app-name
+        run: |
+          herokuAppName="$(echo "${{ needs.get-deploy-env.outputs.heroku-app-name }}" | sed 's#SVC#${{ matrix.service }}#g')"
+          
+          # Hack to work around qa-pricing already existing error in heroku    
+          if echo "$herokuAppName" | grep -q pricing-qa; then
+            herokuAppName="pricing-service-qa"
+          fi
+          
+          echo "heroku-app-name=$herokuAppName"
+          echo "heroku-app-name=$herokuAppName" >> $GITHUB_OUTPUT
+
+          displayName="$(
+            echo "
+              v = '${{ matrix.service }}';
+              console.log(v[0].toUpperCase() + v.slice(1).toLowerCase());
+            " | node
+          )"
+          echo "display-name=$displayName"
+          echo "display-name=$displayName" >> $GITHUB_OUTPUT
+
+      - name: Get deploy targets
+        id: get-deploy-targets
+        run: |
+          deployTargets="$(head -n1 ./apps/${{ matrix.service }}-service/deploy/targets)"
+          echo "deploy-targets=$deployTargets"
+          echo "deploy-targets=$deployTargets" >> $GITHUB_OUTPUT
+
+      - uses: NeatCapitalOrg/devops/actions/deploy-to-heroku@main
+        with:
+          type: docker
+          docker-secrets: |
+            npmrc="//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}"
+          docker-build-args: |
+            SERVICE_NAME=${{ matrix.service }}-service
+          dockerfiles: './deploy/Dockerfile ./apps/${{ matrix.service }}-service/deploy/Dockerfile'
+          tenant: ${{ needs.get-deploy-env.outputs.tenant }}
+          tenant-abrv-uc: ${{ needs.get-deploy-env.outputs.tenant-abrv-uc }}
+          env-abrv-uc: ${{ needs.get-deploy-env.outputs.env-abrv-uc }}
+          heroku-app-name: ${{ steps.fix-app-name.outputs.heroku-app-name }}
+          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku-targets: ${{ steps.get-deploy-targets.outputs.deploy-targets }}
+          gchat-message-webhook: ${{ secrets.GOOGLE_CHAT_BUILDS_WEBHOOK }}
+          gchat-message-display-name: ${{ steps.fix-app-name.outputs.display-name }} Service

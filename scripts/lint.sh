@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
-SCRIPTS="$(dirname "$0")"
+ROOT="$(dirname "$0")/.."
 
-ESLINT_USE_FLAT_CONFIG=1 eslint -c "$SCRIPTS/../eslint.config.js" --cache --cache-location ./node_modules/.cache/ $@
+FILES=('./src/**/*.{ts,tsx,js,jsx}')
+if [ -d ./tests ]; then
+  FILES+=('./tests/**/*.{ts,tsx,js,jsx}')
+fi
+
+ESLINT_USE_FLAT_CONFIG=1 eslint -c "$ROOT/eslint.config.js" --cache --cache-location ./node_modules/.cache/eslint-cache $@ "${FILES[@]}"

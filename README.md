@@ -1,9 +1,9 @@
 Generic Typescript Monorepo Philosophy
 =================================================================================================================
 
-_**NOTE: THIS IS AN ONGOING EXPERIMENT.** This repository is a reference implementation of the monorepo philosophy
-outlined in this readme. It may work for you, but it may not. Use at your own risk, and be ready to take what's valuable
-from it while leaving behind what's not._
+_**NOTE: THIS IS A WORK IN PROGRESS.** This repository is a reference implementation of the monorepo philosophy outlined
+in this readme. It may work for you, but it may not. Use at your own risk, and be ready to take what's valuable from it
+while leaving behind what's not._
 
 _Furthermore, all views expressed in this readme are intended to represent **my personal ideas,** not any particular
 assertion of "the truth"._
@@ -81,10 +81,10 @@ The primary things `pnpm` provides that make monorepo management possible/easier
   my packages, I can run `pnpm -r typecheck` to easily run that npm script in all packages for which it is defined.
   What's more, `pnpm` will run the scripts against the packages in dependency order, meaning if package A depends on B
   and I run `pnpm -r tsc`, it will run `tsc` in package B first, then package A.
-* **Advanced filtering.** It also includes a very advanced filtering mechanism that includes selecting packages that are
-  dependent on a given package or that are dependencies of a given package, as well as selecting packages according to
-  code changes between two git commits. This allows you to run testing and linting against only things that have
-  actually changed since the last relevant commit.
+* **Advanced filtering.** It also includes a very advanced [filtering mechanism](https://pnpm.io/filtering) that
+  includes selecting packages that are dependent on a given package or that are dependencies of a given package, as well
+  as selecting packages according to code changes between two git commits. This allows you to run testing and linting
+  against only things that have actually changed since the last relevant commit.
 * **Advanced version management for publishing.** For packages within the monorepo that are dependent on other packages
   within the monorepo (such as `libs/shared-be` in this repo),`pnpm` allows you to publish the dependent packages with
   concrete dependency version specs while transparently linking the dependency to the live version in the monorepo for
@@ -228,6 +228,46 @@ I wish docker had an `#include` mechanism of some sort, but unfortunatley it doe
 this is to concatenate a base file from the monorepo root with a service-specific file from the service folder and
 pipe that into `docker build` via stdin. See `./deploy` and `./apps/*/deploy` along with the `./scripts/docker-build.sh`
 script to see how it all comes together.
+
+In general, I consider the docker infrastructure in this monorepo to be both funky and also reasonably functional and
+stable. This is the setup I implemented at my last company, and it's a pattern I'll likely use again in the future.
+
+Some key points:
+
+* `./deploy/dockerfile.base` is the base dockerfile for all builds
+* GOTCHA: There's a dynamic section in `dockerfile.base` to mount all the libs and apps when installing deps. This
+  allows us to not have to risk having an out-of-date dockerfile when we add new libs and apps, but it also makes the
+  dockerfile unusable in raw form. Trade-offs.
+* The front-end dockerfile (`./deploy/dockerfile.react-ext`) has not been battle tested and is considered a starting
+  point.
+* At this time, there are no service-specific extensions, but the implemented dockerfile system allows you to provide
+  a file at `apps/*/deploy/dockerfile.service` if you wish to make additional changes to the final built service. If
+  you need to change the build target as a result, you can change the given package's `docker:build` npm script to
+  contain the `DOCKER_TARGET` env var before calling the script, e.g.,
+  `"docker:build": "DOCKER_TARGET=my-targ ../../scripts/docker-build.sh"`
+* The dev docker image is simply the monorepo. And since the `/monorepo` directory is actually replaced with your live
+  monorepo, the image really just serves as a fixed runtime environment.
+* You can build all containers using `pnpm docker:build`
+* You can bring the system up using `pnpm docker:compose up -d` (dev). This brings the system up in dev mode with your
+  local monorepo linked in. If you want to run the actual built containers statically, try `pnpm docker:compose prod up -d`.
+  You can bring the system back down by running `pnpm docker:compose [ENV] down`, and you can additionally pass any
+  arguments you'd like to docker compose, e.g., `pnpm docker:compose [ENV] logs -f`.
+
+
+### ESLint
+
+I respect that the folks who created eslint did a good enough job to achieve massive world-wide adoption, but wow is it
+ever a mess.
+
+I've tried a number of times to finally overcome my shortcomings in eslint and the more I study it the more confused I
+get. The people who built it are surely brilliant, but the product itself is awful....
+
+With that caveat, here's what to know about my eslint setup:
+
+* I used the beta "flat-file" config format for forward compatibility. This caused even more problems than just standard
+  eslint, but it's supposedly been feature complete for a while now so I figured I'd go for it.
+* I'm not by any means an expert in eslint config, so I may have messed this up. Take what I've done as inspiration, but
+  be ready to forge your own path here.
 
 
 ### Boilerplate

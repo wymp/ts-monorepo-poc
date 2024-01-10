@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', url });
 });
 
-app.use(((err, req, res, next) => {
+app.use(((err, req, res) => {
   if (!err) {
     res.status(404).json({ status: 'error', error: 'Not found' });
   } else {

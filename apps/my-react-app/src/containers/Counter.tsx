@@ -10,4 +10,4 @@ export const Counter = () => {
       </p>
     </div>
   );
-}
+};
