@@ -135,108 +135,42 @@ jobs:
           restore-keys: |
             eslint-cache-
           path: |
-            ./apps/*/.eslintcache
-            ./packages/*/.eslintcache
+            ./apps/*/node_modules/.cache/eslint-cache
+            ./libs/*/node_modules/.cache/eslint-cache
 
-      - name: Jest Cache
-        uses: actions/cache@v3
-        with:
-          key: jest-cache-${{ env.BRANCH }}
-          restore-keys: |
-            jest-cache-
-          path: |
-            /tmp/jest_*
+      # - name: Jest Cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     key: jest-cache-${{ env.BRANCH }}
+      #     restore-keys: |
+      #       jest-cache-
+      #     path: |
+      #       /tmp/jest_*
 
-      - name: Typecheck and build
-        run: pnpm build:libs
-
-      - name: Prepare app envs
+      - name: Lint and Typecheck
         run: |
-          for d in ./apps/*; do
-            # TODO:TEMPORARY: Remove this once we've finished https://neatcapital.atlassian.net/browse/LOANS-8353
-            if ! [ -d "$d/.env" ] && [ -f "$d/.env.sample" ]; then
-              cp "$d/.env.sample" "$d/.env"
-            fi
-          done
+          pnpm \
+            --parallel \
+            --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
+            --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
+            typecheck
 
-      - name: Lint
-        run: |
           pnpm \
             --parallel \
             --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
             --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
             lint
 
-          # Don't need to typecheck because our build step above does that for us
-          # pnpm \
-          #   --parallel \
-          #   --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
-          #   --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
-          #   typecheck
-
-      - name: Run Tests
-        run: pnpm test:raw --changedSince=${{ needs.get-deploy-env.outputs.affected-shas-base }}
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/testdb
-          CLOUDAMQP_URL: amqp://localhost:${{ job.services.rabbitmq.ports[5672] }}
-
-  ##
-  ## Prime our docker layer cache
-  ##
-
-  # TODO: We need to figure out how to do docker layer caching on our own (without build-push-action) so that our
-  # internal `deploy-to-heroku` action works properly.
-
-  # prime-docker-cache:
-  #   name: Prime Docker Cache
-  #   # needs: [test, get-deploy-env]
-  #   # needs: [get-deploy-env]
-  #   # if: "!cancelled() && !failure() && needs.get-deploy-env.outputs.deployable == 'true'"
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: PNPM Cache for Docker
-  #       uses: actions/cache@v3
-  #       with:
-  #         path: .pnpm-store
-  #         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('./pnpm-lock.yaml') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-pnpm-store-
-
-  #     - uses: docker/setup-buildx-action@v3
-
-  #     - name: Inject pnpm cache into Docker
-  #       uses: reproducible-containers/buildkit-cache-dance@v2.1.2
-  #       with:
-  #         cache-source: .pnpm-store
-  #         cache-target: /monorepo/.pnpm-store
-
-  #     # WARNING: File mutations prior to this step will be ignored in the docker build. See documentation at
-  #     # https://github.com/docker/build-push-action
-  #     - uses: docker/build-push-action@v5
-  #       with:
-  #         context: .
-  #         cache-from: type=gha
-  #         cache-to: type=gha,mode=max
-  #         file: ./deploy/Dockerfile
-  #         target: libs-builder
-  #         build-args: |
-  #           NODE_VERSION=18
-  #           PM_VERSION=^8
-  #         # build-args: |
-  #         #   NODE_VERSION=${{ needs.get-deploy-env.outputs.node-version }}
-  #         #   PM_VERSION=${{ needs.get-deploy-env.outputs.pm-version }}
-  #         secrets: |
-  #           npmrc=//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+      # - name: Run Tests
+      #   run: pnpm test:raw --changedSince=${{ needs.get-deploy-env.outputs.affected-shas-base }}
 
   ##
   ## Build and deploy services
   ##
 
   build-and-deploy:
-    name: Build and Deploy ${{ matrix.service && format('{0}-{1}', matrix.service, 'service') || '' }}
-    needs: [get-deploy-env, test] #, prime-docker-cache]
+    name: Build and Deploy ${{ matrix.service }}
+    needs: [get-deploy-env, test]
     if: "!cancelled() && !failure() && needs.get-deploy-env.outputs.deployable == 'true'"
     runs-on: ubuntu-latest
     strategy:
@@ -245,6 +179,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # TODO: Figure out how to set up pnpm cache for building docker containers
       # - name: PNPM Cache for Docker
       #   uses: actions/cache@v3
       #   with:
@@ -259,48 +194,8 @@ jobs:
       #     cache-source: .pnpm-store
       #     cache-target: /monorepo/.pnpm-store
 
-      - name: Fix app name
-        id: fix-app-name
-        run: |
-          herokuAppName="$(echo "${{ needs.get-deploy-env.outputs.heroku-app-name }}" | sed 's#SVC#${{ matrix.service }}#g')"
-          
-          # Hack to work around qa-pricing already existing error in heroku    
-          if echo "$herokuAppName" | grep -q pricing-qa; then
-            herokuAppName="pricing-service-qa"
-          fi
-          
-          echo "heroku-app-name=$herokuAppName"
-          echo "heroku-app-name=$herokuAppName" >> $GITHUB_OUTPUT
+      - name: Build Containers for Affected Apps
+        run: pnpm --sequence --filter "${{ matrix.service }}" docker:build
 
-          displayName="$(
-            echo "
-              v = '${{ matrix.service }}';
-              console.log(v[0].toUpperCase() + v.slice(1).toLowerCase());
-            " | node
-          )"
-          echo "display-name=$displayName"
-          echo "display-name=$displayName" >> $GITHUB_OUTPUT
-
-      - name: Get deploy targets
-        id: get-deploy-targets
-        run: |
-          deployTargets="$(head -n1 ./apps/${{ matrix.service }}-service/deploy/targets)"
-          echo "deploy-targets=$deployTargets"
-          echo "deploy-targets=$deployTargets" >> $GITHUB_OUTPUT
-
-      - uses: NeatCapitalOrg/devops/actions/deploy-to-heroku@main
-        with:
-          type: docker
-          docker-secrets: |
-            npmrc="//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}"
-          docker-build-args: |
-            SERVICE_NAME=${{ matrix.service }}-service
-          dockerfiles: './deploy/Dockerfile ./apps/${{ matrix.service }}-service/deploy/Dockerfile'
-          tenant: ${{ needs.get-deploy-env.outputs.tenant }}
-          tenant-abrv-uc: ${{ needs.get-deploy-env.outputs.tenant-abrv-uc }}
-          env-abrv-uc: ${{ needs.get-deploy-env.outputs.env-abrv-uc }}
-          heroku-app-name: ${{ steps.fix-app-name.outputs.heroku-app-name }}
-          heroku-api-key: ${{ secrets.HEROKU_API_KEY }}
-          heroku-targets: ${{ steps.get-deploy-targets.outputs.deploy-targets }}
-          gchat-message-webhook: ${{ secrets.GOOGLE_CHAT_BUILDS_WEBHOOK }}
-          gchat-message-display-name: ${{ steps.fix-app-name.outputs.display-name }} Service
+      # TODO: Deployment is highly dependent on your actual setup. Deferring on this for now.
+      # - name: Deploy
