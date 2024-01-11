@@ -35,7 +35,7 @@ However, they come with their own set of problems. Namely:
 
 ## Definitions
 
-Certain terms in this readme can be confusing in this, so I'll clarify them up front.
+Certain terms in this readme can be confusing, so I'll clarify them up front.
 
 * When I say **package**, I'm referring to an app or library in this monorepo, e.g., `apps/my-microservice` or
   `libs/shared-types`.
