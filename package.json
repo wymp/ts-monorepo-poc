@@ -17,6 +17,7 @@
     "docker:build:dev": "DOCKER_TARGET=dev SERVICE_NAME=monorepo ./scripts/docker-build.sh",
     "docker:compose": "./scripts/docker-compose.sh",
     "format": "pnpm -r format",
+    "pkgjson": "./scripts/.internal/pkgjson.sh",
     "publish:all": "./scripts/.internal/publish-all.sh",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",

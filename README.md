@@ -238,6 +238,16 @@ scripts that you compose into the higher-level ones. For example, you could writ
 `./scripts/.internal/eslint.sh` that calls eslint with a bunch of parameters, then reference that from the higher level
 `./scripts/lint.sh` and `./scripts/lint-fix.sh` scripts. (Easily reference the scripts dir using `DIR="$(dirname "$0)"`)
 
+#### `pkgjson` Script
+
+It's often really annoying to have to go through and edit a bunch of `package.json` files by hand. This top-level script
+makes it easy to set values in all `package.json` files at once. You can also provide `--filter` and/or `--exclude`
+arguments to target a subset of packages.
+
+For example: `pnpm pkgjson --filter microservice --exclude my --merge set .files '["dist","README.md"]'`
+
+See `pnpm pkgjson --help` for more details.
+
 
 ### Docker Infrastructure
 
