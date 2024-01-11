@@ -19,7 +19,7 @@ set -e
 # Determine if any important top-level files have changed that would require a full re-deploy of everything
 hasTopLevelChanges="$(
   git diff --name-only "$NX_BASE" | \
-  grep -qE '^(\.github|\.dockerignore|deploy/.*\.dockerfile|pnpm-lock|pnpm-workspace|tsconfig)' && \
+  grep -qE '^(\.github|\.jest|deploy/dockerfile.+|scripts|\.dockerignore|\.npmrc|\.eslint\.config\.js|package\.json|pnpm-lock|pnpm-workspace|tsconfig)' && \
   echo 1 || \
   echo ""
 )"
