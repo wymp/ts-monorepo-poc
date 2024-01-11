@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - v*
+      - ci-test*
   # Additionally, we'll target PR updates so that CI runs against open PRs
   pull_request:
     types:
@@ -56,21 +57,22 @@ jobs:
         run: |
           # Replace this with 'v1.x' or another branch to simulate a CI run on that branch
           REFNAME=$GITHUB_REF_NAME
-          # REFNAME=v1.x
+          REFNAME=v1.x
           echo "REFNAME=$REFNAME"
           echo "REFNAME=$REFNAME" >> $GITHUB_ENV
 
-          BASEBRANCH="$(echo "$REFNAME" | grep -q '^develop|release-|main-' && echo $REFNAME || echo develop)"
+          # TODO: Implement more complex handling of default branch
+          BASEBRANCH="$(echo "$REFNAME" | grep -q '^v[0-9]+]\.' && echo $REFNAME || echo v1.x)"
           echo "BASEBRANCH=$BASEBRANCH"
           echo "BASEBRANCH=$BASEBRANCH" >> $GITHUB_ENV
 
-          NODE_VERSION="$(./scripts/.internal/getEngineVersion.sh node)"
+          NODE_VERSION="$(./scripts/.internal/getEngineVersion.js node)"
           echo "NODE_VERSION=$NODE_VERSION"
-          echo "NODE_VERSION=$NODE_VERSION" >> $GITHUB_OUTPUTS
+          echo "NODE_VERSION=$NODE_VERSION" >> $GITHUB_OUTPUT
 
-          PNPM_VERSION="$(./scripts/.internal/getEngineVersion.sh pnpm)"
+          PNPM_VERSION="$(./scripts/.internal/getEngineVersion.js pnpm)"
           echo "PNPM_VERSION=$PNPM_VERSION"
-          echo "PNPM_VERSION=$PNPM_VERSION" >> $GITHUB_OUTPUTS
+          echo "PNPM_VERSION=$PNPM_VERSION" >> $GITHUB_OUTPUT
 
       # Output some info for debugging purposes
       - name: Output Versions for Debugging
@@ -125,8 +127,8 @@ jobs:
     needs: [get-deploy-env]
     runs-on: ubuntu-latest
     steps:
-      - name: Set up node and pnpm
-        uses: ./.github/actions/setup-env.yml
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
 
       - name: ESLint Cache
         uses: actions/cache@v3
@@ -159,10 +161,22 @@ jobs:
             --parallel \
             --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
             --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
+            prettier
+
+          pnpm \
+            --parallel \
+            --filter="${{ needs.get-deploy-env.outputs.pnpmFilter }}" \
+            --changed-files-ignore-pattern="${{ needs.get-deploy-env.outputs.pnpmIgnorePattern }}" \
             lint
 
       # - name: Run Tests
-      #   run: pnpm test:raw --changedSince=${{ needs.get-deploy-env.outputs.affected-shas-base }}
+      #   run: pnpm test --changedSince=${{ needs.get-deploy-env.outputs.affected-shas-base }}
+
+  ##
+  ## Pre-Seed Docker Cache
+  ##
+
+  # TODO: Figure out how to set up efficient docker layer caching so we can run 
 
   ##
   ## Build and deploy services
@@ -178,6 +192,7 @@ jobs:
         service: ${{ fromJson(needs.get-deploy-env.outputs.affectedAppsJson) }}
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-env
 
       # TODO: Figure out how to set up pnpm cache for building docker containers
       # - name: PNPM Cache for Docker
@@ -194,7 +209,7 @@ jobs:
       #     cache-source: .pnpm-store
       #     cache-target: /monorepo/.pnpm-store
 
-      - name: Build Containers for Affected Apps
+      - name: Build Container for ${{ matrix.service }}
         run: pnpm --sequence --filter "${{ matrix.service }}" docker:build
 
       # TODO: Deployment is highly dependent on your actual setup. Deferring on this for now.

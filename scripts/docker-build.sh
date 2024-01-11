@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Initialize docker args
+DOCKER_ARGS=()
+
 # We need a service name - this can either be set explicitly or inferred from pnpm variables. The service name should
 # correspond to some directory under ./apps
 SERVICE_NAME="$([ -n "$SERVICE_NAME" ] && echo "$SERVICE_NAME" || echo "$PNPM_PACKAGE_NAME")"
@@ -12,6 +15,8 @@ if [ -z "$SERVICE_NAME" ]; then
     exit 1
   fi
 fi
+
+DOCKER_ARGS+=(--build-arg SERVICE_NAME="$SERVICE_NAME")
 
 # Find the rot of the repo
 ROOT="$(dirname "$0")/.."
@@ -36,25 +41,27 @@ fi
 NODE_VERSION=20
 PM_VERSION=^8.14.0
 
+DOCKER_ARGS+=(--build-arg NODE_VERSION=$NODE_VERSION)
+DOCKER_ARGS+=(--build-arg PM_VERSION=$PM_VERSION)
+
 # By default, we'll tag our images as `dev`. You can set `VERSION_TAG` to change this, though
 VERSION_TAG="$([ -n "$VERSION_TAG" ] && echo "$VERSION_TAG" || echo "dev")"
 
+# If we've got an npmrc file, provide it as a secret
+if [ -f "$HOME"/.npmrc ]; then
+  DOCKER_ARGS+=(--secret id=npmrc,src=$HOME/.npmrc)
+fi
+
 # `DOCKER_TARGET` allows us to specify a different target than our default `service` target. We'll need to this for
 # building react apps or node apps with appendages.
-DOCKER_TARGET_ARG=()
 if [ -n "$DOCKER_TARGET" ]; then
-  DOCKER_TARGET_ARG=(--target "$DOCKER_TARGET")
+  DOCKER_ARGS+=(--target "$DOCKER_TARGET")
 fi
+
+DOCKER_ARGS+=(-f -)
+DOCKER_ARGS+=(-t ghcr.io/my-namespace/"$SERVICE_NAME":"$VERSION_TAG")
+DOCKER_ARGS+=("$ROOT")
 
 # Finally, run the files through our concatenator/preparator script and pipe it into docker build
 # NOTE: Docker builds depend on having auth creds in your ~/.npmrc file. In CI you can just create this file.
-"$ROOT"/scripts/.internal/concat-and-prep-dockerfiles.js "${FILES[@]}" \
-  | docker image build \
-    --secret id=npmrc,src=$HOME/.npmrc \
-    --build-arg NODE_VERSION=$NODE_VERSION \
-    --build-arg PM_VERSION=$PM_VERSION \
-    --build-arg SERVICE_NAME="$SERVICE_NAME" \
-    -f - \
-    -t ghcr.io/my-namespace/"$SERVICE_NAME":"$VERSION_TAG" \
-    "${DOCKER_TARGET_ARG[@]}" \
-    "$ROOT"
+"$ROOT"/scripts/.internal/concat-and-prep-dockerfiles.js "${FILES[@]}" | docker image build "${DOCKER_ARGS[@]}"
