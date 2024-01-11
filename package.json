@@ -16,6 +16,7 @@
     "docker:build": "DOCKER_TARGET=dev SERVICE_NAME=monorepo ./scripts/docker-build.sh && pnpm -r --sequential docker:build",
     "docker:compose": "./scripts/docker-compose.sh",
     "format": "pnpm -r format",
+    "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck"
   },
   "keywords": [],
@@ -25,6 +26,7 @@
     "@eslint/eslintrc": "^3.0.0",
     "@eslint/js": "^8.56.0",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.11",
     "@types/node": "^20.10.6",
     "@types/react": "^18.2.46",
     "@types/react-dom": "^18.2.18",
@@ -49,6 +51,7 @@
   "pnpm": {
     "overrides": {
       "@types/express": "$@types/express",
+      "@types/jest": "$@types/jest",
       "@types/node": "$@types/node",
       "@types/react": "$@types/react",
       "@types/react-dom": "$@types/react-dom",

@@ -22,6 +22,7 @@
     "noUnusedParameters": false,
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
+    "esModuleInterop": false,
 
     "paths": {}
   },

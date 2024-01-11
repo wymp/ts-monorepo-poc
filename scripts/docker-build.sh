@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Find the root of the repo
+ROOT="$(dirname "$0")/.."
+
 # Initialize docker args
 DOCKER_ARGS=()
 
@@ -18,9 +21,6 @@ fi
 
 DOCKER_ARGS+=(--build-arg SERVICE_NAME="$SERVICE_NAME")
 
-# Find the rot of the repo
-ROOT="$(dirname "$0")/.."
-
 # Create a files array that will contain the dockerfiles (in order) that we're going to concat together to make our
 # final dockerfile. If this is a react app, add the react extension. Finally, if the service has a service.dockerfile,
 # we'll add that
@@ -35,11 +35,12 @@ if [ -f "$ROOT"/apps/"$SERVICE_NAME"/deploy/dockerfile.service ]; then
   FILES+=("$ROOT"/apps/"$SERVICE_NAME"/deploy/dockerfile.service)
 fi
 
-# It's good practice to lock down node and package manager versions, but we're not going to worry about the best way to
-# do that for now.
-# TODO: Make these come from somewhere centralized, like package.json::engines
-NODE_VERSION=20
-PM_VERSION=^8.14.0
+# Get node and pnpm versions from `package.json::engines`
+NODE_VERSION="$("$ROOT/scripts/.internal/getEngineVersion.js" node)"
+PM_VERSION="$("$ROOT/scripts/.internal/getEngineVersion.js" pnpm)"
+
+DOCKER_ARGS+=(--build-arg NODE_VERSION=$NODE_VERSION)
+DOCKER_ARGS+=(--build-arg PM_VERSION=$PM_VERSION)
 
 DOCKER_ARGS+=(--build-arg NODE_VERSION=$NODE_VERSION)
 DOCKER_ARGS+=(--build-arg PM_VERSION=$PM_VERSION)

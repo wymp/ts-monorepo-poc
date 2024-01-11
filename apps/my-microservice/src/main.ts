@@ -1,47 +1,26 @@
-import { loggingMiddleware } from '@monorepo/shared-be';
-import { MyThing, myThing } from '@monorepo/shared-types';
-import Express from 'express';
+import { assembleDeps } from './deps/prodDeps';
+import { initApp } from './init';
 
-const config = {
-  port: process.env.PORT || 3000,
-  other: {
-    host: process.env.OTHER_HOST || 'http://localhost:4000',
-  },
-};
+// Set the app up to gracefully handle shutdowns
 
-const app = Express();
+let shutdown: () => Promise<void>;
 
-app.use(loggingMiddleware(`my-microservice`));
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  next();
-});
-
-app.get('/', (req, res) => {
-  const thing: MyThing = myThing;
-  const url = `${req.protocol}://${req.get('host')}${req.originalUrl}}`;
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), url, thing });
-});
-
-app.get('/proxy', async (req, res, next) => {
-  try {
-    if (req.query.error) {
-      throw new Error('Error from my-microservice');
-    }
-    const response = await (await fetch(config.other.host)).json();
-    res.json({ status: 'ok', timestamp: new Date().toISOString(), path: req.path, response });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.use(((err, req, res) => {
-  if (!err) {
-    res.status(404).json({ status: 'error', error: 'Not found' });
+const close = async (e: any) => {
+  if (typeof e === 'string') {
+    console.log(`Signal '${e}' received. Shutting down...`);
   } else {
-    res.status(500).json({ status: 'error', error: err.message });
+    console.error(e);
   }
-}) as Express.ErrorRequestHandler);
+  await shutdown();
+}
 
-app.listen(config.port);
-console.log(`my-microservice listening on port ${config.port}`);
+process.on('SIGTERM', close);
+process.on('SIGINT', close);
+process.on('unhandledRejection', close);
+
+// Now assemble our production dependencies and initialize the app with them
+
+(async () => {
+  const deps = await assembleDeps();
+  shutdown = await initApp(deps);
+})();
