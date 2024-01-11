@@ -1,7 +1,7 @@
 Generic Typescript Monorepo Philosophy
 =================================================================================================================
 
-_**NOTE: THIS IS A WORK IN PROGRESS.** This repository is a reference implementation of the monorepo philosophy outlined
+_**NOTE: THIS IS AN EXPERIMENT.** This repository is a reference implementation of the monorepo philosophy outlined
 in this readme. It may work for you, but it may not. Use at your own risk, and be ready to take what's valuable from it
 while leaving behind what's not._
 
@@ -31,6 +31,15 @@ However, they come with their own set of problems. Namely:
 * How do we do all this without a ton of annoying and repetitive boilerplate (such as having basically the same set of
   configuration files and scripts in every sub-package of the repo)?
 * How do we keep all this simple enough to actually understand and work with without a ton of up-front onboarding?
+
+
+## Definitions
+
+Certain terms in this readme can be confusing in this, so I'll clarify them up front.
+
+* When I say **package**, I'm referring to an app or library in this monorepo, e.g., `apps/my-microservice` or
+  `libs/shared-types`.
+* When I say **dependency**, I'm referring to an external dependency, such as `lodash` or `ts-node`.
 
 
 ## Example Repo
@@ -69,6 +78,9 @@ monorepo.
 
 
 ### Package Manager
+
+_Or "Dependency Manager", to be consistent with my definitions above, but most people will be more familiar with the
+term "Package Manager" so I'll call it that._
 
 I use `pnpm`. I haven't experimented much with others and am reasonably happy with `pnpm`. I used to use `npm` because
 I tend to be a no-frills programmer, but we used `pnpm` at my last company and I found I appreciated it quite a bit.
