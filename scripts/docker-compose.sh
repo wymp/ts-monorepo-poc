@@ -22,12 +22,17 @@ function echo_help() {
 }
 
 ENV=
+SAVED_ENV="$([ -f "$ROOT/.docker-compose-env" ] && cat "$ROOT/.docker-compose-env" || true)"
 
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help)
       echo_help
       exit 0
+      ;;
+    -f|--force)
+      FORCE=1
+      shift
       ;;
     -*|build|config|cp|create|down|events|exec|images|kill|logs|ls|pause|port|ps|pull|push|restart|rm|run|start|stop|top|unpause|up|version|wait)
       break
@@ -46,13 +51,19 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$ENV" ]; then
-  ENV="dev"
+  ENV="$([ -n "$SAVED_ENV" ] && echo "$SAVED_ENV" || echo dev)"
 fi
 
 if ! [ -f "$ROOT/deploy/compose.${ENV}.yml" ]; then
   >&2 echo "E: Unknown environment: '$ENV'. Available environments: ${OPTS[*]}"
   exit 1
 fi
+
+if [ -n "$SAVED_ENV" ] && [ "$ENV" != "$SAVED_ENV" ] && [ -z "$FORCE" ]; then
+  >&2 echo "E: Environment changed from '$SAVED_ENV' to '$ENV'. Please use the `-f\|--force` argument to confirm."
+  exit 1
+fi
+echo -n "$ENV" > "$ROOT/.docker-compose-env"
 
 ARGS=(-f "$ROOT/deploy/compose.base.yml" -f "$ROOT/deploy/compose.${ENV}.yml")
 if [ -f "$ROOT/deploy/compose.local.yml" ] && [ "$ENV" != 'local' ]; then

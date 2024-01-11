@@ -252,6 +252,10 @@ Some key points:
   local monorepo linked in. If you want to run the actual built containers statically, try `pnpm docker:compose prod up -d`.
   You can bring the system back down by running `pnpm docker:compose [ENV] down`, and you can additionally pass any
   arguments you'd like to docker compose, e.g., `pnpm docker:compose [ENV] logs -f`.
+* Note that I've implemented a small environment caching mechanism so you don't always have to pass the environment
+  along with `pnpm docker:compose`. This is just to avoid situations where you brought up the prod stack and then
+  accidentally ran a command against the (non-existent) dev stack or something because you forgot to include `prod`
+  again.
 
 
 ### ESLint
