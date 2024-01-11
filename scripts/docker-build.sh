@@ -42,9 +42,6 @@ PM_VERSION="$("$ROOT/scripts/.internal/getEngineVersion.js" pnpm)"
 DOCKER_ARGS+=(--build-arg NODE_VERSION=$NODE_VERSION)
 DOCKER_ARGS+=(--build-arg PM_VERSION=$PM_VERSION)
 
-DOCKER_ARGS+=(--build-arg NODE_VERSION=$NODE_VERSION)
-DOCKER_ARGS+=(--build-arg PM_VERSION=$PM_VERSION)
-
 # By default, we'll tag our images as `dev`. You can set `VERSION_TAG` to change this, though
 VERSION_TAG="$([ -n "$VERSION_TAG" ] && echo "$VERSION_TAG" || echo "dev")"
 
