@@ -114,9 +114,9 @@ not expected to be depended upon.
 
 The general rule with dependencies is this: _For a given package, if you `import` a dependency, list it in that
 package's `package.json` file._ Otherwise, it should be saved as a top-level monorepo dependency in the top-level
-`package.json`. (And to avoid ambiguity, it's best to save ALL top-level dependencies as prod dependencies, since it
-really doesn't matter.) This means that things like `jest`, `typescript`, `ts-node`, etc, - i.e., _codebase utilities_ -
-should be listed as top-level deps in the monorepo.
+`package.json`. (And to avoid ambiguity, it's best to save ALL top-level dependencies as `dependencies` rather than
+`devDependencies`, since it really doesn't matter.) This means that things like `jest`, `typescript`, `ts-node`, etc, -
+i.e., _codebase utilities/tooling_ - should be listed as top-level deps in the monorepo.
 
 Because of the way `pnpm` works, you cannot import code from a package that you have not explicitly listed in the
 consumer's `package.json` file (feature, not bug). For example, if I'm using `express` in `my-microservice`, I need to
@@ -125,11 +125,13 @@ that package, I need to list `uuid` as an explicit dev dependency of that packag
 
 This sucks a little because it means you still have to worry about dependency versions getting out of sync between
 packages, but ultimately that's a tradeoff of modular code. (NOTE: [syncpack](https://github.com/JamieMason/syncpack) is
-probably worth a look but I haven't actually checked it out yet. Another rather intriguing option is using the
-[`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides) field to enforce version consistency.)
+probably worth a look but I haven't actually checked it out yet).
 
-So once again: If your package imports a dependency, list it in that package's `package.json`, and for any utilities,
-list them as top-level repo deps.
+The approach I've taken to this problem in this repo is to use the [`pnpm.overrides`](https://pnpm.io/package_json#pnpmoverrides)
+field in the top-level `package.json` file to enforce version consistency. For any dependency that I want to be the same
+across all of my packages, I install it at the top level, add an entry in `pnpm.overrides` for it. You can then run
+`pnpm --filter my-package i --save some-dep` for that dependency and it will add the correct version to that package's
+`package.json`.
 
 
 #### Dependency Versions
@@ -140,6 +142,8 @@ list them as top-level repo deps.
   Make sure that when your library is published, the actual version specification is both defined and permissive. If
   you use `pnpm`, you can do something like `"my-workspace-dep": "workspace:^5.33.0 || ^6.0.0"`, which will be
   transformed on publish to just `"my-workspace-dep": "^5.33.0 || ^6.0.0"`.
+* Use `pnpm -r up -Li` to interactively upgrade all deps, both at the top level and in packages. You can upgrade just a
+  single package or a set of packages by passing a package name or a scope (see [docs](https://pnpm.io/cli/update)).
 
 
 ### Publishing Libraries
@@ -150,7 +154,7 @@ If you do need to, here are a few guidelines/suggestions:
 
 * As mentioned above in [Dependencies](#dependencies), make sure your dependency version specs are correct and
   permissive. For libraries DON'T lock down dependency versions; rather provide as broad a range of compatible versions
-  as you feel safe declaring. 
+  as you feel safe declaring. For example, `"uuid": "^8.5.0 || ^9.0.0"`.
 * Use the `files` array in `package.json` to list the files that should be included in your package. This is nominally
   better (for various uninteresting reasons) than using `.npmignore` to ignore files.
 * I can go both ways on this, but I think I've decided that it's better to bump all library versions simultaneously,
@@ -158,14 +162,15 @@ If you do need to, here are a few guidelines/suggestions:
   side and the consumer side. Provided you've chosen this route:
   * Your repo branches should correspond to your library versions. For example, you should have branches `v1.x`, `v2.x`,
     `v3.x`, etc.
-  * Tag the repo at each library version release (for example, `v5.3.0`) (probably best to use a script for managing
-    library version bumping, tagging and publishing)
+  * Tag the repo at each library version release (for example, `v5.3.0`)
   * If you need to publish a patch, perform the fix on the earliest branch you want to support that is affected by the
     bug. For example, if you're currently on `v5.3.0` and the bug appeared in `v3.1.0`, go back to the `v3.x` branch,
     fix the bug, publish a patch against whatever the latest 3-series release is - say, `v3.6.1` - then roll the fix
     forward through the `v4.x` and `v5.x` branches. This should result in the fix being available on every major release
     that was affected. (If it's a particularly bad security bug and your library is particularly popular, it may be
     necessary to publish patch releases against _every affected and supported minor release._)
+  * Use the `pnpm publish:all` command to easily publish libraries that need to be published. You can use this together
+    with the `pnpm version:bump` command to first set the version, then publish.
 
 
 ### Typescript Configuration

@@ -25,12 +25,12 @@
   "dependencies": {
     "@monorepo/shared-be": "workspace:^",
     "@monorepo/shared-types": "workspace:^",
-    "express": "*"
+    "express": "4.18.2"
   },
   "devDependencies": {
-    "@types/express": "*",
-    "@types/jest": "*",
-    "@monorepo/testing": "workspace:^"
+    "@monorepo/testing": "workspace:^",
+    "@types/express": "4.17.21",
+    "@types/jest": "29.5.11"
   },
   "prettier": {
     "printWidth": 120,

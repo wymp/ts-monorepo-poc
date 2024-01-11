@@ -27,8 +27,7 @@
   "dependencies": {
     "@monorepo/shared-types": "workspace:^"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "prettier": {
     "printWidth": 120,
     "singleQuote": true,
