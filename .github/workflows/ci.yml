@@ -34,8 +34,6 @@ jobs:
       contents: 'read'
       actions: 'read'
     outputs:
-      node-version: ${{ steps.initial-vars.outputs.NODE_VERSION }}
-      pnpm-version: ${{ steps.initial-vars.outputs.PNPM_VERSION }}
       affected-shas-base: ${{ steps.get-affected-sha-spread.outputs.base }}
       affected-shas-head: ${{ steps.get-affected-sha-spread.outputs.head }}
       pnpmFilter: ${{ steps.get-pnpm-params.outputs.pnpmFilter }}
@@ -57,7 +55,7 @@ jobs:
         run: |
           # Replace this with 'v1.x' or another branch to simulate a CI run on that branch
           REFNAME=$GITHUB_REF_NAME
-          REFNAME=v1.x
+          #REFNAME=v1.x
           echo "REFNAME=$REFNAME"
           echo "REFNAME=$REFNAME" >> $GITHUB_ENV
 
@@ -66,11 +64,7 @@ jobs:
           echo "BASEBRANCH=$BASEBRANCH"
           echo "BASEBRANCH=$BASEBRANCH" >> $GITHUB_ENV
 
-          NODE_VERSION="$(./scripts/.internal/getEngineVersion.js node)"
-          echo "NODE_VERSION=$NODE_VERSION"
-          echo "NODE_VERSION=$NODE_VERSION" >> $GITHUB_OUTPUT
-
-          PNPM_VERSION="$(./scripts/.internal/getEngineVersion.js pnpm)"
+          PNPM_VERSION="$(jq -r .engines.pnpm package.json)"
           echo "PNPM_VERSION=$PNPM_VERSION"
           echo "PNPM_VERSION=$PNPM_VERSION" >> $GITHUB_OUTPUT
 
@@ -128,7 +122,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-env
+      - uses: wymp/devops/actions/setup-node-pnpm@v1
 
       - name: ESLint Cache
         uses: actions/cache@v3
@@ -177,7 +171,7 @@ jobs:
         service: ${{ fromJson(needs.get-deploy-env.outputs.affectedAppsJson) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-env
+      - uses: wymp/devops/actions/setup-node-pnpm@v1
 
       # TODO: Figure out how to set up pnpm cache for building docker containers
       # - name: PNPM Cache for Docker

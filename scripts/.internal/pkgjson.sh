@@ -14,13 +14,16 @@ function echo_usage() {
   echo "   $0 -h|--help                           - Show this help message and exit"
   echo "   $0 ([options]) set [key] [value]       - Set the given key to the given value in package.json. Keys may be specified in jq format."
   echo "   $0 ([options]) [del|delete] [key]      - Delete the given key from package.json. Keys may be specified in jq format."
+  echo "   $0 ([options]) sort                    - Sort all the keys in each package.json file alphabetically"
   echo
-  echo "Options:"
+  echo "Global Options:"
   echo "  -f|--filter [regex]                     - Only include packages matching the given regex"
   echo "  -e|--exclude [regex]                    - Exclude any packages matching the given regex"
-  echo "  -j|--json                               - (For set) Interpret the value as JSON"
-  echo "  -m|--merge                              - (For set) Merge the value with the existing value (implies --json)"
   echo "  -d|--dry-run                            - Don't actually modify any files, just output the changes that would be made"
+  echo
+  echo "'Set' Options:"
+  echo "  -j|--json                               - Interpret the value as JSON"
+  echo "  -m|--merge                              - Merge the value with the existing value (implies --json)"
   echo
 }
 
@@ -45,6 +48,10 @@ function process_del_args() {
   if [ -n "$2" ]; then exit_with_error "Unknown argument: '$2'"; fi
 }
 
+function process_sort_args() {
+  if [ -n "$1" ]; then exit_with-error "Unknown argument: '$1'"; fi
+}
+
 function apply_cmd() {
   local OUTPUT
   for pkgjson in "$ROOT/apps"/*/package.json "$ROOT/libs"/*/package.json; do
@@ -59,6 +66,21 @@ function apply_cmd() {
       fi
     elif [ "$CMD" == "delete" ]; then
       OUTPUT="$(jq "del($DEL_KEY)" "$pkgjson")"
+    elif [ "$CMD" == "sort" ]; then
+      local EXTRA
+      OUTPUT="$(jq --sort-keys . "$pkgjson")"
+      if jq -e .scripts "$pkgjson" &>/dev/null; then
+        EXTRA="$(echo "$OUTPUT" | jq --sort-keys '.scripts')"
+        OUTPUT="$(echo "$OUTPUT" | jq --argjson val "$EXTRA" '.scripts |= $val')"
+      fi
+      if jq -e .dependencies "$pkgjson" &>/dev/null; then
+        EXTRA="$(echo "$OUTPUT" | jq --sort-keys '.dependencies')"
+        OUTPUT="$(echo "$OUTPUT" | jq --argjson val "$EXTRA" '.dependencies |= $val')"
+      fi
+      if jq -e .devDependencies "$pkgjson" &>/dev/null; then
+        EXTRA="$(echo "$OUTPUT" | jq --sort-keys '.devDependencies')"
+        OUTPUT="$(echo "$OUTPUT" | jq --argjson val "$EXTRA" '.devDependencies |= $val')"
+      fi
     else
       exit_with_error "Unknown command: '$CMD'"
     fi
@@ -115,13 +137,13 @@ while [ $# -gt 0 ]; do
       shift
     ;;
 
-    set)
-      CMD="set"
+    set|sort|delete)
+      CMD="$1"
       shift
       break
     ;;
 
-    del|delete)
+    del)
       CMD="delete"
       shift
       break
@@ -147,6 +169,8 @@ if [ "$CMD" == "set" ]; then
   process_set_args "$@"
 elif [ "$CMD" == "delete" ]; then
   process_del_args "$@"
+elif [ "$CMD" == "sort" ]; then
+  process_sort_args "$@"
 else
   exit_with_error "Unknown command: '$CMD'"
 fi
