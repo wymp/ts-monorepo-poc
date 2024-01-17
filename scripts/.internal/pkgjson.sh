@@ -23,7 +23,7 @@ function echo_usage() {
   echo
   echo "'Set' Options:"
   echo "  -j|--json                               - Interpret the value as JSON"
-  echo "  -m|--merge                              - Merge the value with the existing value (implies --json)"
+  echo "  -m|--merge                              - Merge the value with the existing value (implies --json), rather than overwriting. Without this flag, passing '["my", "values"]' will discard the current array value and replace it with the one given."
   echo
 }
 

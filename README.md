@@ -238,6 +238,7 @@ scripts that you compose into the higher-level ones. For example, you could writ
 `./scripts/.internal/eslint.sh` that calls eslint with a bunch of parameters, then reference that from the higher level
 `./scripts/lint.sh` and `./scripts/lint-fix.sh` scripts. (Easily reference the scripts dir using `DIR="$(dirname "$0)"`)
 
+
 #### `pkgjson` Script
 
 It's often really annoying to have to go through and edit a bunch of `package.json` files by hand. This top-level script
@@ -247,6 +248,23 @@ arguments to target a subset of packages.
 For example: `pnpm pkgjson --filter microservice --exclude my --merge set .files '["dist","README.md"]'`
 
 See `pnpm pkgjson --help` for more details.
+
+
+#### Why Not Package These?
+
+These ended up being somewhat powerful scripts (in some cases), so why not package them up for better distribution and
+usability?
+
+I _did_ end up packing a few of them, as well as a github action that I originally created for this repo. You can access
+those [here](https://github.com/wymp/devops/).
+
+However, as I thought about it, I realized that every package becomes an impediment to adaptability. If I were to
+package these up, I would create a situation in which it became virtually impossible to make them work for everyone's
+individual codebase, and then we'd be back to square one.
+
+Instead, I thought it would be easier to provide them as boilerplate and let implementers add, delete or modify the
+scripts as desired. Ultimately, people who want to keep up with my personal updates can always just copy the latest from
+this repo.
 
 
 ### Docker Infrastructure
@@ -329,9 +347,18 @@ All that said, here are the key points in my monorepo testing setup:
 
 ### E2E Testing
 
-_TODO: Figure this out. I'm new to automated e2e testing so need to experiment before putting something out there.
+_**TODO: Figure this out.** I'm new to automated e2e testing so need to experiment before putting something out there.
 Cypress is popular, but when I did some research for the last company I was at I ended up leaning toward Playwright.
-Whatever you choose, just create the project in the top-level `e2e-tests` directory and go from there.
+Whatever you choose, just create the project in the top-level `e2e-tests` directory and go from there._
+
+Two things from when I set this up at my last company:
+
+* You should be able to create a full, working docker deployment of your system that the e2e tests can use. This is
+  worth it, as you can then deploy your environment _per branch_ in CI and run e2e tests.
+* Unfortunately, it seems that neither Cypress nor Playwright offers a good way to test server logging during e2e
+  testing. This seems like a huge omission, as it can often make a huge difference when debugging a failing test.
+  However, it's possible that there is a way to do this using some sort of a log watcher based on the node
+  `docker-compose` package. More experimentation needed....
 
 
 ### Environment Variables
