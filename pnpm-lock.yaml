@@ -64,6 +64,9 @@ importers:
       express:
         specifier: 4.18.2
         version: 4.18.2
+      globals:
+        specifier: ^13.24.0
+        version: 13.24.0
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@20.10.8)(ts-node@10.9.2)

@@ -30,10 +30,5 @@
   },
   "devDependencies": {
     "@types/express": "*"
-  },
-  "prettier": {
-    "printWidth": 120,
-    "singleQuote": true,
-    "trailingComma": "all"
   }
 }

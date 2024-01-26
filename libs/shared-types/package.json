@@ -24,10 +24,5 @@
   "publishConfig": {
     "main": "dist/index.js",
     "types": "dist/index.d.ts"
-  },
-  "prettier": {
-    "printWidth": 120,
-    "singleQuote": true,
-    "trailingComma": "all"
   }
 }

@@ -28,10 +28,5 @@
   "dependencies": {
     "@monorepo/shared-types": "workspace:^",
     "react": "18.2.0"
-  },
-  "prettier": {
-    "printWidth": 120,
-    "singleQuote": true,
-    "trailingComma": "all"
   }
 }

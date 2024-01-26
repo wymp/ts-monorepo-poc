@@ -3,7 +3,9 @@ const { FlatCompat } = require("@eslint/eslintrc");
 const ESLintJS = require("@eslint/js");
 const ESLintTSParser = require("@typescript-eslint/parser");
 const reactRefresh = require("eslint-plugin-react-refresh");
+const ESLintTSPlugin = require("@typescript-eslint/eslint-plugin");
 const prettier = require("eslint-config-prettier");
+const globals = require("globals");
 
 const compat = new FlatCompat({ resolvePluginsRelativeTo: __dirname });
 
@@ -28,18 +30,19 @@ module.exports = [
     {
         "files": ["apps/*/{src,tests}/**","libs/*/{src,tests}/**"],
         "ignores": ["apps/my-react-app/**", "libs/shared-fe/**"],
-        "env": {
-            "browser": false,
-            "node": true,
-            "es2022": true
+        "languageOptions": {
+            "ecmaVersion": 2022,
+            "globals": {
+                ...globals.commonjs,
+            },
+            "parserOptions": {
+                "ecmaVersion": "latest",
+                "sourceType": "module"
+            },
         },
-        "parserOptions": {
-            "ecmaVersion": "latest",
-            "sourceType": "module"
+        "plugins": {
+            "@typescript-eslint": ESLintTSPlugin,
         },
-        "plugins": [
-            "@typescript-eslint"
-        ],
     },
 
     // For all front-end code
