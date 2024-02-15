@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-if ! command -v jq &> /dev/null; then
+if ! command -v jq 2>1 > /dev/null; then
   >&2 echo "E: jq not found. You must install jq to use this script"
   exit 1
 fi
@@ -32,7 +32,7 @@ for pkg in "$ROOT/libs"/*; do
       if [ "$CONFIRM" -eq 1 ]; then
         read -p "Publish $PKG_NAME@$NEW_VERSION? [Y/n] " -n 1 REPLY
         echo
-        if [[ "$REPLY" =~ ^[Nn]$ ]]; then
+        if echo "$REPLY" | grep -Eq '^[Nn]$'; then
           echo "Skipping $PKG_NAME@$NEW_VERSION"
           continue
         fi

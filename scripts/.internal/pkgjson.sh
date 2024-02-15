@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 ROOT="$(dirname "$0")/../.."
@@ -9,7 +9,7 @@ JSON=
 OPERATOR="|="
 DRY_RUN=
 
-function echo_usage() {
+echo_usage() {
   echo "Usage:"
   echo "   $0 -h|--help                           - Show this help message and exit"
   echo "   $0 ([options]) set [key] [value]       - Set the given key to the given value in package.json. Keys may be specified in jq format."
@@ -27,14 +27,14 @@ function echo_usage() {
   echo
 }
 
-function exit_with_error() {
+exit_with_error() {
   >&2 echo_usage
   >&2 echo
   >&2 echo "E: $1"
   exit 1
 }
 
-function process_set_args() {
+process_set_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
       -j|--json)
@@ -65,31 +65,31 @@ function process_set_args() {
   if [ -z "$SET_VAL" ]; then exit_with_error "No value specified"; fi
 }
 
-function process_del_args() {
+process_del_args() {
   DEL_KEY="$1"
   if [ -z "$DEL_KEY" ]; then exit_with_error "No key specified"; fi
   if [ -n "$2" ]; then exit_with_error "Unknown argument: '$2'"; fi
 }
 
-function process_sort_args() {
+process_sort_args() {
   if [ -n "$1" ]; then exit_with-error "Unknown argument: '$1'"; fi
 }
 
-function apply_cmd() {
+apply_cmd() {
   local OUTPUT
   for pkgjson in "$ROOT/libs"/*/package.json; do
     if ! echo "$pkgjson" | grep -Eq "$FILTER" || echo "$pkgjson" | grep -Eq "$EXCLUDE"; then
       continue
     fi
-    if [ "$CMD" == "set" ]; then
+    if [ "$CMD" = "set" ]; then
       if [ -n "$JSON" ]; then
         OUTPUT="$(jq --argjson val "$SET_VAL" "$SET_KEY += \$val" "$pkgjson")"
       else
         OUTPUT="$(jq --arg val "$SET_VAL" "$SET_KEY |= \$val" "$pkgjson")"
       fi
-    elif [ "$CMD" == "delete" ]; then
+    elif [ "$CMD" = "delete" ]; then
       OUTPUT="$(jq "del($DEL_KEY)" "$pkgjson")"
-    elif [ "$CMD" == "sort" ]; then
+    elif [ "$CMD" = "sort" ]; then
       local EXTRA
       OUTPUT="$(jq --sort-keys . "$pkgjson")"
       if jq -e .scripts "$pkgjson" &>/dev/null; then
@@ -177,11 +177,11 @@ done
 
 if [ -z "$CMD" ]; then exit_with_error "No command specified"; fi
 
-if [ "$CMD" == "set" ]; then
+if [ "$CMD" = "set" ]; then
   process_set_args "$@"
-elif [ "$CMD" == "delete" ]; then
+elif [ "$CMD" = "delete" ]; then
   process_del_args "$@"
-elif [ "$CMD" == "sort" ]; then
+elif [ "$CMD" = "sort" ]; then
   process_sort_args "$@"
 else
   exit_with_error "Unknown command: '$CMD'"
